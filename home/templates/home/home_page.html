@@ -15,4 +15,10 @@
   <a class="btn btn-primary btn-lg" href="#" role="button"> @hello </a>
     {% endif %}
 </div>
+<div class="container">
+        {% for block in page.content %}
+        {% include_block block %}
+        {% endfor %}
+</div>
 {% endblock %}
+

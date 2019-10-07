@@ -1,9 +1,27 @@
 from django.db import models
+from modelcluster.fields import ParentalKey
 
-from wagtail.core.models import Page
-from wagtail.core.fields import RichTextField
-from wagtail.admin.edit_handlers import FieldPanel, PageChooserPanel
+from wagtail.core.models import Page, Orderable
+from wagtail.core.fields import RichTextField, StreamField
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, PageChooserPanel, StreamFieldPanel
 from wagtail.images.edit_handlers import ImageChooserPanel
+from streams import Blocks
+
+
+class HomePageCarouselImage(Orderable):
+    """ Between 1 and 5 pages for home page    """
+    page = ParentalKey("home.HomePage", related_name='carousel_image')
+    carousel_image = models.ForeignKey(
+        "wagtailimages.Image",
+        null=True,
+        blank=False,
+        on_delete=models.SET_NULL,
+        related_name='+',
+    )
+
+    panels = [
+        ImageChooserPanel("carousel_image")
+    ]
 
 
 class HomePage(Page):
@@ -28,12 +46,21 @@ class HomePage(Page):
 
     body = RichTextField(blank=True)
 
+    content = StreamField(
+        [
+            ("cta", Blocks.CTABlock()),
+        ],
+        null=True,
+        blank=True,
+    )
     content_panels = Page.content_panels + [
         FieldPanel('body', classname="full"),
         FieldPanel('banner_title'),
         FieldPanel('banner_subtitle'),
         ImageChooserPanel('banner_image'),
         PageChooserPanel('banner_cta'),
+        StreamFieldPanel('content'),
+        InlinePanel("carousel_image"),
 
     ]
 
