@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block body_class %}template-homepage{% endblock %}
+
+{% block content %}
+{% image self.banner_image width-1200 as img%}
+
+
+<div class="jumbotron" style="background-image:url('{{img.url}}'); background-size:cover ; background-position:center">
+  <h1 class="display-4" style="color:black">{{self.banner_title}}</h1>
+  <p class="lead" style="color:black">{{self.banner_subtitle}}</p>
+    {% if self.banner_cta %}
+  <a class="btn btn-primary btn-lg" href="#" role="button"> @hello </a>
+    {% endif %}
+</div>
+{% endblock %}
