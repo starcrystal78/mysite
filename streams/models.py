@@ -17,7 +17,6 @@ class FlexPage(Page):
     template = 'streams\Flex_page.html'
     content = StreamField(
         [
-            ("title_and_text", Blocks.TitleAndTextBlock()),
             ("Full_richtext", Blocks.RichtextBLock()),
             ("simple_richtext", Blocks.SimpleRichtextBLock()),
             ("card", Blocks.CardBlock()),
@@ -26,6 +25,8 @@ class FlexPage(Page):
         null=True,
         blank=True,
     )
+    ("title_and_text", Blocks.TitleAndTextBlock()),
+
     subtitle = models.CharField(max_length=120, blank=False, null=True)
 
     content_panels = Page.content_panels + [

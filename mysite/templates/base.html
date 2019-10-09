@@ -18,6 +18,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
     {# Global stylesheets #}
+    <script src="https://kit.fontawesome.com/87f31fcd33.js" crossorigin="anonymous"></script>
 
     {% block extra_css %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/mysite.css' %}">
@@ -43,7 +44,47 @@
     </div>
 </nav>
 
-{% block content %}{% endblock %}
+{% block content%}
+
+<h1 style="align:center; color:red">NO content to display</h1>
+<hr>
+<hr>
+<p style="align:center; color :red"> you jst called the base page only <br>
+no content in your page or configuration wrong for the CONTENT BLOCK <br>
+<hr>
+<hr>
+</p>
+{% endblock %}
+
+<hr>
+<hr>
+
+<!--here is the icon of the different social medial -->
+<div class="content" style="align:center">
+
+{%if settings.site_settings.SocialMediaSettings.facebook%}
+<a href="{{settings.site_settings.SocialMediaSettings.facebook}}">
+     <i class="fab fa-facebook" style="size:5x"></i>
+</a>
+{%endif%}
+{%if settings.site_settings.SocialMediaSettings.twitter%}
+<a href="{{settings.site_settings.SocialMediaSettings.twitter}}">
+     <i class="fab fa-twitter"></i>
+</a>
+{%endif%}
+{%if settings.site_settings.SocialMediaSettings.youtube%}
+<a href="{{settings.site_settings.SocialMediaSettings.youtube}}">
+<i class="fab fa-youtube"></i>
+</a>
+{%endif%}
+{%if settings.site_settings.SocialMediaSettings.instagram%}
+<a href="{{settings.site_settings.SocialMediaSettings.instagram}}">
+     <i class="fab fa-instagram"></i>
+</a>
+{%endif%}
+
+</div>
+<!--the media icon ends here-->
 
 {# Global javascript #}
 
