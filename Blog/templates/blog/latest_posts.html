@@ -1,8 +1,9 @@
 {% extends 'base.html'%}
-{% load wagtailimages_tags wagtailroutablepage_tags%}
+{% load wagtailimages_tags%}
 {%block content %}
+   <h1 style="align:center;color:green">Latest posts </h1>
 <div class="card-columns">
-    {% for post in posts%}
+    {% for post in latest_posts %}
     {% image post.blog_image fill-900x1200 as img%}
     <!--this is the content from  the bootstraps-->
 
@@ -26,5 +27,5 @@
     <!--bootstraps content ends here-->
     {%endfor%}
 </div>
-<a href="{% routablepageurl page 'latest_posts'%}"><button type="button" class="btn btn-outline-primary" style="align:center">Latest posts</button></a>
 {%endblock content%}
+

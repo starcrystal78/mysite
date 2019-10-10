@@ -1,6 +1,7 @@
 """stream fields live here"""
 from wagtail.core import blocks
 from wagtail.images.blocks import ImageChooserBlock
+# from blog.models import BlogDetailPage
 
 
 class TitleAndTextBlock(blocks.StructBlock):
@@ -21,10 +22,11 @@ class CardBlock(blocks.StructBlock):
         blocks.StructBlock(
             [
                 ("image", ImageChooserBlock(required=True)),
-                ("name", blocks.CharBlock(required=True,  max_length=40)),
+                ("name", blocks.CharBlock(required=True, max_length=40)),
                 ("text", blocks.TextBlock(required=True, max_length=200)),
-                ("button_page",blocks.PageChooserBlock(required=False)),
-                ("button_url", blocks.URLBlock(required=False, help_text="If the button page above is selected, that will be used first"))
+                ("button_page", blocks.PageChooserBlock(required=False)),
+                ("button_url", blocks.URLBlock(required=False,
+                                               help_text="If the button page above is selected, that will be used first"))
             ]
         )
     )
@@ -35,15 +37,14 @@ class CardBlock(blocks.StructBlock):
         label = "Add cards"
 
 
-class RichtextBLock (blocks.RichTextBlock):
-
+class RichtextBLock(blocks.RichTextBlock):
     class Meta:
         template = "streams/richtext_block.html"
         icon = "doc-full"
         label = 'Full RichText'
 
 
-class SimpleRichtextBLock (blocks.RichTextBlock):
+class SimpleRichtextBLock(blocks.RichTextBlock):
 
     def __init__(self, required=True, help_text=None, editor='default', features=None, validators=(), **kwargs):
         super().__init__(**kwargs)
@@ -55,7 +56,7 @@ class SimpleRichtextBLock (blocks.RichTextBlock):
 
     class Meta:
         template = "streams/simplerichtext_block.html"
-        icon  = "edit"
+        icon = "edit"
         label = 'SimpleRichText'
 
 
@@ -71,3 +72,34 @@ class CTABlock(blocks.StructBlock):
         template = "streams/ctablock.html"
         icon = 'edit'
         label = 'CTABlock'
+
+
+class LinkStructValue(blocks.StructValue):
+    """Additional logic for our urls."""
+    def url(self):
+        button_page = self.get('button_page')
+        button_url = self.get('button_url')
+        if button_page:
+            return button_page.url
+        elif button_url:
+            return button_url
+        return None
+
+    # def latest_post(self):
+    #     return BlogDetailPage.objects.live()[:3]
+
+
+class ButtonBlock(blocks.StructBlock):
+    """An external or internal URL """
+    button_page = blocks.PageChooserBlock(required=False, help_text='If this is selected the url will be of this page')
+    button_url = blocks.URLBlock(required=False, help_text='If page is not selected  this  url will work ')
+    #
+    # def get_context(self, request, *args, **kwargs):
+    #     context = super().get_context(request, *args, **kwargs)
+    #     context['latest_post'] = BlogDetailPage.objects.live(),public()[:3]
+
+    class Meta:
+        template = "streams/button_block.html"
+        icon = 'placeholder'
+        label = 'call to Action'
+        value_class = LinkStructValue

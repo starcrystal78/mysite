@@ -31,7 +31,7 @@
 {% wagtailuserbar %}
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <a class="navbar-brand" href="#">{{self.title}}</a>
+    <a class="navbar-brand" href="/">Startup Life</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor01"
             aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -39,8 +39,20 @@
 
     <div class="collapse navbar-collapse" id="navbarColor01">
         <ul class="navbar-nav mr-auto">
-
+            <li class="nav-item active">
+                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/blogs">Blog</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/about">About</a>
+            </li>
         </ul>
+<!--        <form class="form-inline my-2 my-lg-0">-->
+<!--            <input class="form-control mr-sm-2" type="text" placeholder="Search">-->
+<!--            <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>-->
+<!--        </form>-->
     </div>
 </nav>
 
@@ -50,7 +62,7 @@
 <hr>
 <hr>
 <p style="align:center; color :red"> you jst called the base page only <br>
-no content in your page or configuration wrong for the CONTENT BLOCK <br>
+    no content in your page or configuration wrong for the CONTENT BLOCK <br>
 <hr>
 <hr>
 </p>
@@ -60,30 +72,35 @@ no content in your page or configuration wrong for the CONTENT BLOCK <br>
 <hr>
 
 <!--here is the icon of the different social medial -->
-<div class="content" style="align:center">
 
-{%if settings.site_settings.SocialMediaSettings.facebook%}
-<a href="{{settings.site_settings.SocialMediaSettings.facebook}}">
-     <i class="fab fa-facebook" style="size:5x"></i>
-</a>
-{%endif%}
-{%if settings.site_settings.SocialMediaSettings.twitter%}
-<a href="{{settings.site_settings.SocialMediaSettings.twitter}}">
-     <i class="fab fa-twitter"></i>
-</a>
-{%endif%}
-{%if settings.site_settings.SocialMediaSettings.youtube%}
-<a href="{{settings.site_settings.SocialMediaSettings.youtube}}">
-<i class="fab fa-youtube"></i>
-</a>
-{%endif%}
-{%if settings.site_settings.SocialMediaSettings.instagram%}
-<a href="{{settings.site_settings.SocialMediaSettings.instagram}}">
-     <i class="fab fa-instagram"></i>
-</a>
-{%endif%}
 
-</div>
+
+
+     <footer class="blockquote-footer offset ml-5" >
+
+    {%if settings.site_settings.SocialMediaSettings.facebook%}
+    <a href="{{settings.site_settings.SocialMediaSettings.facebook}}">
+        <i class="fab fa-facebook mx-1" style=""></i>
+    </a>
+    {%endif%}
+    {%if settings.site_settings.SocialMediaSettings.twitter%}
+    <a href="{{settings.site_settings.SocialMediaSettings.twitter}}">
+        <i class="fab fa-twitter mx-1"></i>
+    </a>
+    {%endif%}
+    {%if settings.site_settings.SocialMediaSettings.youtube%}
+    <a href="{{settings.site_settings.SocialMediaSettings.youtube}}">
+        <i class="fab fa-youtube mx-1"></i>
+    </a>
+    {%endif%}
+    {%if settings.site_settings.SocialMediaSettings.instagram%}
+    <a href="{{settings.site_settings.SocialMediaSettings.instagram}}">
+        <i class="fab fa-instagram mx-1"></i>
+    </a>
+    {%endif%}
+
+     </footer>
+
 <!--the media icon ends here-->
 
 {# Global javascript #}
