@@ -28,7 +28,11 @@ INSTALLED_APPS = [
     'search',
 
     'wagtail.contrib.forms',
+    'wagtail.contrib.settings',
+    'wagtail.contrib.modeladmin',
     'wagtail.contrib.redirects',
+    'wagtail.contrib.routable_page',
+    'wagtail.contrib.sitemaps',
     'wagtail.embeds',
     'wagtail.sites',
     'wagtail.users',
@@ -48,8 +52,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Blog',
+    'django.contrib.sitemaps',
+
+    'blog',
     'streams',
+    "site_settings",
+    'subscribers',
+
 ]
 
 MIDDLEWARE = [
@@ -80,6 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'wagtail.contrib.settings.context_processors.settings'
             ],
         },
     },
