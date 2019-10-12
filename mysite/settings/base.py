@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'streams',
     "site_settings",
     'subscribers',
+    'menus',
+    'contact',
 
 ]
 
@@ -69,7 +71,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
     'wagtail.core.middleware.SiteMiddleware',
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 ]
