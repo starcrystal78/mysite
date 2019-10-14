@@ -28,6 +28,8 @@ class ContactPage(AbstractEmailForm):
 
     template = "contact/contact_page.html"
     intro = RichTextField(blank=True)
+    subpage_types = []
+    parent_page_types = ["home.HomePage"]
     thank_you_text = RichTextField(blank=True)
 
     content_panels = AbstractEmailForm.content_panels + [

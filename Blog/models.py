@@ -1,4 +1,3 @@
-
 # ###################### The old blog model import files #########################
 # from django.db import models
 # # New imports added for ParentalKey, Orderable, InlinePanel, ImageChooserPanel
@@ -16,13 +15,17 @@
 
 from django.db import models
 from django import forms
+from wagtail.api import APIField
+from django.core.cache import cache
+from django.core.cache.utils import make_template_fragment_key
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.shortcuts import render
-from modelcluster.fields import ParentalKey , ParentalManyToManyField
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from wagtail.core.models import Page, Orderable
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.core.fields import StreamField
 from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.images.api.fields import ImageRenditionField
 from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.admin.edit_handlers import (
     FieldPanel,
@@ -31,7 +34,22 @@ from wagtail.admin.edit_handlers import (
     InlinePanel)
 from wagtail.snippets.models import register_snippet
 
+from rest_framework.fields import Field
 from streams import Blocks
+
+
+# this class is for aip --== use only for more customization else use ImageRenditionFielda as above
+class ImageSerializedField(Field):
+    """A custom serializer used in wagtail v2 API"""
+
+    def to_representation(self, value):
+        """Returns the image url ,title and dimensions ."""
+        return {
+            "url": value.file.url,
+            "title": value.title,
+            "width": value.width,
+            "height": value.height,
+        }
 
 
 class BlogAuthorsOrderable(Orderable):
@@ -47,11 +65,34 @@ class BlogAuthorsOrderable(Orderable):
         SnippetChooserPanel("author"),
     ]
 
+    # the following property is added so we can see author_name in api ## video 37
+    # coding for Everybody / learn Wagtail
+
+    @property
+    def author_name(self):
+        return self.author.name
+
+    @property
+    def author_image(self):
+        return self.author.image
+
+    @property
+    def author_website(self):
+        return self.author.website
+
+    api_fields = [
+        APIField('author'),
+        APIField("author_name"),
+        # APIField("author_image", serializer=ImageSerializedField()),
+        APIField("image", serializer=ImageRenditionField('fill-200x250', source="author_image")),
+        APIField("author_website"),
+    ]
+
 
 class BlogAuthor(models.Model):
     """Blog author for snippets"""
     name = models.CharField(max_length=120)
-    website = models.URLField(blank=True, null=True,)
+    website = models.URLField(blank=True, null=True, )
     image = models.ForeignKey(
         'wagtailimages.Image',
         on_delete=models.SET_NULL,
@@ -105,7 +146,7 @@ class BlogCategory(models.Model):
     ]
 
     class Meta:
-        verbose_name="Blog Category"
+        verbose_name = "Blog Category"
         verbose_name_plural = 'Blog Categories'
         ordering = ['name']
 
@@ -119,6 +160,12 @@ register_snippet(BlogCategory)
 class BlogListingPage(RoutablePageMixin, Page):
     """listing page lists all the blog detail pages"""
     template = 'blog/blog_listing_page.html'
+    max_count = 1
+    subpage_types = [
+        "blog.ArticleBlogPage",
+        "blog.VideoBlogPage",
+    ]
+    ajax_template = "blog/blog_listing_page_ajax.html"
     custom_title = models.CharField(
         max_length=100,
         blank=False,
@@ -173,6 +220,9 @@ class BlogListingPage(RoutablePageMixin, Page):
 class BlogDetailPage(Page):
     """Parental Blog detail Page"""
     template = 'blog/blog_detail_page.html'
+    subpage_type = []
+    # limit the page which can be the parent of this page
+    parent_page_types = ["blog.BlogListingPage"]
     custom_title = models.CharField(
         max_length=100,
         blank=False,
@@ -214,6 +264,18 @@ class BlogDetailPage(Page):
         ],
             heading="Categories")
     ]
+    # to add the field to the api content url= http://127.0.0.1:8000/api/v2/pages/16/
+    api_fields = [
+        APIField("blog_authors")
+    ]
+
+    def save(self, *args, **kwargs):
+        key = make_template_fragment_key(
+            "blog_post_preview",
+            [self.id]
+        )
+        cache.delete(key)
+        return super().save(*args, **kwargs)
 
 
 # First subclass blog post page
@@ -221,7 +283,7 @@ class ArticleBlogPage(BlogDetailPage):
     """A subclass blog post page for articles"""
     template = "blog/article_blog_page.html"
     subtitle = models.CharField(max_length=120, default='', blank=True, null=True)
-    intro_image= models.ForeignKey(
+    intro_image = models.ForeignKey(
         "wagtailimages.Image",
         blank=True,
         null=True,
@@ -267,8 +329,6 @@ class VideoBlogPage(BlogDetailPage):
         FieldPanel('youtube_video_id'),
         StreamFieldPanel('content'),
     ]
-
-
 
 # ############################ the OLd blog models.py content here #############################################
 

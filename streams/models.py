@@ -15,6 +15,7 @@ from . import Blocks
 
 class FlexPage(Page):
     template = 'streams\Flex_page.html'
+    subpage_types= ['streams.FlexPage',]
     content = StreamField(
         [
             ("Full_richtext", Blocks.RichtextBLock()),

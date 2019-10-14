@@ -6,7 +6,9 @@ from wagtail.core.fields import RichTextField, StreamField
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, InlinePanel, PageChooserPanel, StreamFieldPanel
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
+from wagtail.api import APIField
 from streams import Blocks
+
 
 
 class HomePageCarouselImage(Orderable):
@@ -28,6 +30,13 @@ class HomePageCarouselImage(Orderable):
 class HomePage(RoutablePageMixin, Page):
     max_count = 1
     template = "home/home_page.html"
+    # the below subpage is responsible for how many types of page can be created under Home page
+    subpage_types = [
+        "blog.BlogListingPage",
+        "contact.ContactPage",
+        "streams.FlexPage",
+    ]
+    parent_page_types = ["wagtailcore.Page"]
     banner_title = models.CharField(max_length=120, blank=False, null=True)
     banner_subtitle = RichTextField(features=['bold', 'italic'], blank=True, null=True)
     banner_image = models.ForeignKey(
@@ -54,6 +63,14 @@ class HomePage(RoutablePageMixin, Page):
         null=True,
         blank=True,
     )
+
+# the following line is for adding fields to the api content fields
+    api_fields = [
+        APIField('banner_title'),
+        APIField("banner_subtitle"),
+        APIField("banner_image"),
+        APIField("banner_cta"),
+    ]
     content_panels = Page.content_panels + [
         MultiFieldPanel([
          FieldPanel('banner_title'),

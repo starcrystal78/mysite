@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'wagtail.search',
     'wagtail.admin',
     'wagtail.core',
+    # this is for the api ie the django rest framework wagtail integrated
+    'wagtail.api.v2',
 
     'modelcluster',
     'taggit',
@@ -60,7 +62,10 @@ INSTALLED_APPS = [
     'subscribers',
     'menus',
     'contact',
-
+    # this contain the wagtail hooks for styling the wagtail admin page
+    'core',
+    # this is for the api rest framework
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
