@@ -4,6 +4,13 @@
 
 {% image self.banner_image fill-1200x300 as banner %}
 <img src="{{banner.url}}" alt="{{banner.alt}}" style="width:100%;height:auto;">
+
+<h1>
+    Tags:
+    {%for tag in page.tags.all %}
+    <a href="#">{{tag}}</a><br>
+    {%endfor%}
+</h1>
 <div class="container mt-5 mb-5">
     <div class="text-center">
         <h1>{{self.custom_title}}</h1>

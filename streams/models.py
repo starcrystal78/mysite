@@ -10,7 +10,9 @@ from wagtail.search import index
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from taggit.models import TaggedItemBase
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.core import blocks
 from . import Blocks
+
 
 
 class FlexPage(Page):
@@ -23,6 +25,13 @@ class FlexPage(Page):
             ("card", Blocks.CardBlock()),
             ("cta", Blocks.CTABlock()),
             ("button_block", Blocks.ButtonBlock()),
+            ("Char_block",blocks.CharBlock(
+                required=True,
+                max_length=255,
+                min_length=10,
+                help_text='This is help_text'
+
+            ))
         ],
         null=True,
         blank=True,

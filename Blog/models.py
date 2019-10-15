@@ -21,6 +21,8 @@ from django.core.cache.utils import make_template_fragment_key
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.shortcuts import render
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from modelcluster.contrib.taggit import ClusterTaggableManager
+from taggit.models import TaggedItemBase
 from wagtail.core.models import Page, Orderable
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.core.fields import StreamField
@@ -199,6 +201,27 @@ class BlogListingPage(RoutablePageMixin, Page):
 
         return context
 
+    @route(r"july-2019/$", name="july_2019")
+    @route(r"^year/(\d+)/(\d+)/$", name= "blog_by_year")
+    def blog_by_year(self, request, year=None, month=None):
+        context= self.get_context(request)
+        return render(request, "blog/latest_posts.html", context)
+
+    @route(r"^category/(?P<cat_slug>[-\w]*)/$", name="category_view")
+    def category_view(self, request, cat_slug):
+        """Find blog posts based on a category"""
+        context = self.get_context(request)
+        try:
+            category = BlogCategory.objects.get(slug=cat_slug)
+        except Exception:
+            category = None
+        if category is None:
+            pass
+
+        context['posts'] = BlogDetailPage.objects.filter(categories__in=[category])
+
+        return render(request, "blog/latest_posts.html", context)
+
     @route(r'^latest/$', name='latest_posts')
     def latest_blog_posts(self, request, *args, **kwargs):
         context = self.get_context(request, *args, **kwargs)
@@ -217,12 +240,22 @@ class BlogListingPage(RoutablePageMixin, Page):
         return sitemap
 
 
+class BlogPageTags(TaggedItemBase):
+    content_object = ParentalKey(
+        'BlogDetailPage',
+        related_name="tagged_items",
+        on_delete=models.CASCADE,
+    )
+
+
 class BlogDetailPage(Page):
     """Parental Blog detail Page"""
     template = 'blog/blog_detail_page.html'
     subpage_type = []
     # limit the page which can be the parent of this page
     parent_page_types = ["blog.BlogListingPage"]
+
+    tags = ClusterTaggableManager(through="BlogPageTags", blank=True)
     custom_title = models.CharField(
         max_length=100,
         blank=False,
@@ -252,6 +285,7 @@ class BlogDetailPage(Page):
 
     content_panels = Page.content_panels + [
         FieldPanel('custom_title'),
+        FieldPanel('tags'),
         ImageChooserPanel('banner_image'),
         StreamFieldPanel('content'),
         MultiFieldPanel([
@@ -294,6 +328,7 @@ class ArticleBlogPage(BlogDetailPage):
     content_panels = Page.content_panels + [
         FieldPanel('custom_title'),
         FieldPanel('subtitle'),
+        FieldPanel("tags"),
         ImageChooserPanel('banner_image'),
         ImageChooserPanel('intro_image'),
         MultiFieldPanel([
@@ -329,6 +364,8 @@ class VideoBlogPage(BlogDetailPage):
         FieldPanel('youtube_video_id'),
         StreamFieldPanel('content'),
     ]
+
+
 
 # ############################ the OLd blog models.py content here #############################################
 
