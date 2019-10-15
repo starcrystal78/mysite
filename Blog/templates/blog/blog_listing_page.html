@@ -1,30 +1,111 @@
 {% extends 'base.html'%}
-{% load wagtailimages_tags wagtailroutablepage_tags%}
+{% load wagtailimages_tags wagtailroutablepage_tags cache%}
 {%block content %}
+dipen cache
 <div class="card-columns">
+    <div>
+        <h2> Categories</h2>
+        <ul>
+            {%for cat in category%}
+            <li>
+                <a href="?category={{ cat.slug  }}">{{cat.name}}</a>
+
+            </li>
+            {%endfor%}
+        </ul>
+    </div>
+
     {% for post in posts%}
-    {% image post.blog_image fill-900x1200 as img%}
+    {% cache 60202 blog_posts_preview post.id %}
+       {% image post.banner_image fill-900x1200 as img %}
     <!--this is the content from  the bootstraps-->
 
-    <div class="card mb-3" style="max-width: 540px;">
+    <!--
+    <div class="card border-primary mb-3" style="max-width: 20rem;">
+      <div class="card-header">Header</div>
+      <div class="card-body">
+        <h4 class="card-title">Primary card title</h4>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+      </div>
+    </div>
+
+    -->
+
+
+    <div class="card border-primary mb-3" style="max-width: 540px;">
         <div class="row no-gutters">
             <div class="col-md-4">
                 <a href="{{post.url}}">
-                <img src="{{img.url}}" class="card-img" alt="{{image.alt}}">
+                    <img src="{{img.url}}" class="card-img" alt="{{image.alt}}">
                 </a>
             </div>
             <div class="col-md-8">
                 <div class="card-body">
-                    <h5 class="card-title"> <a href="{{post.url}}">{{post.custom_title}}</a></h5>
-                    <p class="card-text"><a href="{{post.url}}"> {{post.content}}</a> </p>
-                    <p class="card-text"><small class="text-muted">Last updated 5 mins ago</small></p>
+                    <h5 class="card-title"><a href="{{post.url}}">{{post.custom_title}}</a></h5>
+                    {%if post.specific.subtitle%}
+                    <h5 class="card-subtitle"><a href="{{post.url}}">{{post.specific.subtitle}}</a></h5>
+                    {%endif%}
+                    {%if post.content.Full_richtext or post.content.simple_richtext %}
+                    <p class="card-text"><a href="{{post.url}}"> {{post.content}}</a></p>
+                    {%endif%}
+
+                    <p class="card-text"><small class="text-muted">Author:</small></p>
                 </div>
             </div>
         </div>
     </div>
-
+    {%endcache %}
     <!--bootstraps content ends here-->
     {%endfor%}
 </div>
-<a href="{% routablepageurl page 'latest_posts'%}"><button type="button" class="btn btn-outline-primary" style="align:center">Latest posts</button></a>
+<a href="{% routablepageurl page 'latest_posts'%}">
+    <button type="button" class="btn btn-outline-primary">Latest posts</button>
+</a>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+
+            {% if posts.paginator.num_pages > 1 %}
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+
+                        <div class="pagination">
+                            {%if posts.has_previous%}
+                            <li class="page-item">
+                                <a href="?page={{posts.previous_page_number}}" class="page-link">
+                                    <span>&laquo;</span>
+                                </a>
+                            </li>
+                            {%endif%}
+
+                            {%for page_num in posts.paginator.page_range %}
+
+                            <li class="page-item{%if page_num == posts.number %} active {%endif%}">
+                                <a href="?page={{page_num}}" class="page-link">
+                                    {{page_num}}
+                                </a>
+                            </li>
+                            {%endfor%}
+                            {% if posts.has_next%}
+                            <li class="page-item">
+                                <a href="?page={{posts.next_page_number}}" class="page-link">
+                                    <span>&raquo;</span>
+                                </a>
+                            </li>
+                            {%endif%}
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+            {%endif%}
+
+        </div>
+    </div>
+</div>
+
 {%endblock content%}

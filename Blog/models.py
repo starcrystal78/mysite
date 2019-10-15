@@ -1,4 +1,3 @@
-
 # ###################### The old blog model import files #########################
 # from django.db import models
 # # New imports added for ParentalKey, Orderable, InlinePanel, ImageChooserPanel
@@ -15,12 +14,20 @@
 # ############old model import ends
 
 from django.db import models
+from django import forms
+from wagtail.api import APIField
+from django.core.cache import cache
+from django.core.cache.utils import make_template_fragment_key
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.shortcuts import render
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from modelcluster.contrib.taggit import ClusterTaggableManager
+from taggit.models import TaggedItemBase
 from wagtail.core.models import Page, Orderable
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.core.fields import StreamField
 from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.images.api.fields import ImageRenditionField
 from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.admin.edit_handlers import (
     FieldPanel,
@@ -29,7 +36,22 @@ from wagtail.admin.edit_handlers import (
     InlinePanel)
 from wagtail.snippets.models import register_snippet
 
+from rest_framework.fields import Field
 from streams import Blocks
+
+
+# this class is for aip --== use only for more customization else use ImageRenditionFielda as above
+class ImageSerializedField(Field):
+    """A custom serializer used in wagtail v2 API"""
+
+    def to_representation(self, value):
+        """Returns the image url ,title and dimensions ."""
+        return {
+            "url": value.file.url,
+            "title": value.title,
+            "width": value.width,
+            "height": value.height,
+        }
 
 
 class BlogAuthorsOrderable(Orderable):
@@ -42,14 +64,37 @@ class BlogAuthorsOrderable(Orderable):
     )
 
     panels = [
-        SnippetChooserPanel("author")
+        SnippetChooserPanel("author"),
+    ]
+
+    # the following property is added so we can see author_name in api ## video 37
+    # coding for Everybody / learn Wagtail
+
+    @property
+    def author_name(self):
+        return self.author.name
+
+    @property
+    def author_image(self):
+        return self.author.image
+
+    @property
+    def author_website(self):
+        return self.author.website
+
+    api_fields = [
+        APIField('author'),
+        APIField("author_name"),
+        # APIField("author_image", serializer=ImageSerializedField()),
+        APIField("image", serializer=ImageRenditionField('fill-200x250', source="author_image")),
+        APIField("author_website"),
     ]
 
 
 class BlogAuthor(models.Model):
     """Blog author for snippets"""
     name = models.CharField(max_length=120)
-    website = models.URLField(blank=True, null=True,)
+    website = models.URLField(blank=True, null=True, )
     image = models.ForeignKey(
         'wagtailimages.Image',
         on_delete=models.SET_NULL,
@@ -68,14 +113,14 @@ class BlogAuthor(models.Model):
         ),
         MultiFieldPanel(
             [
-                FieldPanel('website')
+                FieldPanel('website'),
             ],
             heading='links'
         )
     ]
 
     def __str__(self):
-        """String rep of this class"""
+        """String repr of this class"""
         return self.name
 
     class Meta:
@@ -87,9 +132,42 @@ class BlogAuthor(models.Model):
 register_snippet(BlogAuthor)
 
 
+class BlogCategory(models.Model):
+    """Blog category for a snippet"""
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(
+        verbose_name="slug",
+        allow_unicode=True,
+        max_length=255,
+        help_text="A slug to identify posts by this category"
+    )
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("slug"),
+    ]
+
+    class Meta:
+        verbose_name = "Blog Category"
+        verbose_name_plural = 'Blog Categories'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+register_snippet(BlogCategory)
+
+
 class BlogListingPage(RoutablePageMixin, Page):
     """listing page lists all the blog detail pages"""
     template = 'blog/blog_listing_page.html'
+    max_count = 1
+    subpage_types = [
+        "blog.ArticleBlogPage",
+        "blog.VideoBlogPage",
+    ]
+    ajax_template = "blog/blog_listing_page_ajax.html"
     custom_title = models.CharField(
         max_length=100,
         blank=False,
@@ -101,11 +179,48 @@ class BlogListingPage(RoutablePageMixin, Page):
     ]
 
     def get_context(self, request, *args, **kwargs):
-        """adding custom stuff to our context"""
+        """Adding custom stuff to our context"""
         context = super().get_context(request, *args, **kwargs)
-        context['posts'] = BlogDetailPage.objects.live().public()
-        context[BlogAuthor] = BlogAuthor.objects.all()
+        # "posts" will have child pages ; you'll need to use .specific in the template
+        # in order to access child properties , such as youtube_video_id and subtitle
+        all_posts = BlogDetailPage.objects.live().public().order_by('-first_published_at')
+        paginator = Paginator(all_posts, 3)
+        page = request.GET.get("page")
+        try:
+            posts = paginator.page(page)
+        except PageNotAnInteger:
+            posts = paginator.page(1)
+
+        except EmptyPage:
+            posts = paginator.page(paginator.num_pages)
+
+        context['posts'] = posts
+
+        # context['Author'] = BlogAuthor.name
+        context['category'] = BlogCategory.objects.all()
+
         return context
+
+    @route(r"july-2019/$", name="july_2019")
+    @route(r"^year/(\d+)/(\d+)/$", name= "blog_by_year")
+    def blog_by_year(self, request, year=None, month=None):
+        context= self.get_context(request)
+        return render(request, "blog/latest_posts.html", context)
+
+    @route(r"^category/(?P<cat_slug>[-\w]*)/$", name="category_view")
+    def category_view(self, request, cat_slug):
+        """Find blog posts based on a category"""
+        context = self.get_context(request)
+        try:
+            category = BlogCategory.objects.get(slug=cat_slug)
+        except Exception:
+            category = None
+        if category is None:
+            pass
+
+        context['posts'] = BlogDetailPage.objects.filter(categories__in=[category])
+
+        return render(request, "blog/latest_posts.html", context)
 
     @route(r'^latest/$', name='latest_posts')
     def latest_blog_posts(self, request, *args, **kwargs):
@@ -118,15 +233,29 @@ class BlogListingPage(RoutablePageMixin, Page):
         # return []
         sitemap = super().get_sitemap_urls(request)
         sitemap.append({
-            "location": self.full_url+ self.reverse_subpage("latest_posts"),
+            "location": self.full_url + self.reverse_subpage("latest_posts"),
             "lastmod": (self.last_published_at or self.latest_revision_created_at),
             "priority": 0.9,
         })
         return sitemap
 
 
+class BlogPageTags(TaggedItemBase):
+    content_object = ParentalKey(
+        'BlogDetailPage',
+        related_name="tagged_items",
+        on_delete=models.CASCADE,
+    )
+
+
 class BlogDetailPage(Page):
+    """Parental Blog detail Page"""
     template = 'blog/blog_detail_page.html'
+    subpage_type = []
+    # limit the page which can be the parent of this page
+    parent_page_types = ["blog.BlogListingPage"]
+
+    tags = ClusterTaggableManager(through="BlogPageTags", blank=True)
     custom_title = models.CharField(
         max_length=100,
         blank=False,
@@ -134,14 +263,14 @@ class BlogDetailPage(Page):
         help_text="Overwrites the default title",
     )
 
-    blog_image = models.ForeignKey(
+    banner_image = models.ForeignKey(
         "wagtailimages.Image",
         blank=False,
         null=True,
         related_name="+",
         on_delete=models.SET_NULL,
     )
-
+    categories = ParentalManyToManyField('blog.BlogCategory', blank=True)
     content = StreamField(
         [
             ("Full_richtext", Blocks.RichtextBLock()),
@@ -156,14 +285,87 @@ class BlogDetailPage(Page):
 
     content_panels = Page.content_panels + [
         FieldPanel('custom_title'),
-        ImageChooserPanel('blog_image'),
+        FieldPanel('tags'),
+        ImageChooserPanel('banner_image'),
         StreamFieldPanel('content'),
         MultiFieldPanel([
             InlinePanel("blog_authors", label='Author', min_num=1, max_num=3)
         ],
-        heading="Author(s)"
-        )
+            heading="Author(s)"
+        ),
+        MultiFieldPanel([
+            FieldPanel("categories", widget=forms.CheckboxSelectMultiple)
+        ],
+            heading="Categories")
     ]
+    # to add the field to the api content url= http://127.0.0.1:8000/api/v2/pages/16/
+    api_fields = [
+        APIField("blog_authors")
+    ]
+
+    def save(self, *args, **kwargs):
+        key = make_template_fragment_key(
+            "blog_post_preview",
+            [self.id]
+        )
+        cache.delete(key)
+        return super().save(*args, **kwargs)
+
+
+# First subclass blog post page
+class ArticleBlogPage(BlogDetailPage):
+    """A subclass blog post page for articles"""
+    template = "blog/article_blog_page.html"
+    subtitle = models.CharField(max_length=120, default='', blank=True, null=True)
+    intro_image = models.ForeignKey(
+        "wagtailimages.Image",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text="best size for this image will be 1400x400"
+    )
+
+    content_panels = Page.content_panels + [
+        FieldPanel('custom_title'),
+        FieldPanel('subtitle'),
+        FieldPanel("tags"),
+        ImageChooserPanel('banner_image'),
+        ImageChooserPanel('intro_image'),
+        MultiFieldPanel([
+            InlinePanel("blog_authors", label='Author', min_num=1, max_num=3)
+        ],
+            heading="Author(s)"
+        ),
+        MultiFieldPanel([
+            FieldPanel("categories", widget=forms.CheckboxSelectMultiple)
+        ],
+            heading="Categories"),
+        StreamFieldPanel('content'),
+    ]
+
+
+# second sub class page
+class VideoBlogPage(BlogDetailPage):
+    template = "blog/video_blog_page.html"
+    youtube_video_id = models.CharField(max_length=120)
+
+    content_panels = Page.content_panels + [
+        FieldPanel('custom_title'),
+        ImageChooserPanel('banner_image'),
+        MultiFieldPanel([
+            InlinePanel("blog_authors", label='Author', min_num=1, max_num=3)
+        ],
+            heading="Author(s)"
+        ),
+        MultiFieldPanel([
+            FieldPanel("categories", widget=forms.CheckboxSelectMultiple)
+        ],
+            heading="Categories"),
+        FieldPanel('youtube_video_id'),
+        StreamFieldPanel('content'),
+    ]
+
+
 
 # ############################ the OLd blog models.py content here #############################################
 

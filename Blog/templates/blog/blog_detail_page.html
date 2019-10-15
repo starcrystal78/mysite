@@ -7,9 +7,37 @@
 <div class="container mt-5 mb-5">
     <div class="text-center">
         <h1>{{self.custom_title}}</h1>
+        <div>
+            <ul>
+                {% for items in self.blog_authors.all %}
+                <li>
+                    {% image items.author.image fill-100x100 as img %}
+                    <img src="{{img.url}}" alt="">
+                    {% if items.author.website %}
+                    <a href="{{items.author.website}}">
+                    {{items.author.name}}
+                    </a>
+                    {%else%}
+                    {{items.author.name}}
+                    {%endif%}
+                </li>
+                {% endfor %}
+
+            </ul>
+        </div>
     </div>
 </div>
+<div>
+    <h2> Categories</h2>
+    <ul>
+        {%for cat in self.categories.all%}
+        <li>
+            <a href="{{self.get_parent.url }}?category={{ cat.slug  }}">{{cat.name}}</a>
 
+        </li>
+        {%endfor%}
+    </ul>
+</div>
 <div class="container">
     <div class="row">
         <div class="col-lg-8 offset-lg2">
